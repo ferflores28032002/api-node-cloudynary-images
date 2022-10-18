@@ -7,12 +7,10 @@ import router from "./routers/productRoutes.js";
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
-// Usamos las rutas con la union de los modelos y los controladores
-
-app.use(router);
 app.use(cors());
 
+// Usamos las rutas con la union de los modelos y los controladores
+app.use(router);
 // verificamos que la conexion sea exitosa ala base de datos mysql
 
 async function main() {
@@ -24,6 +22,7 @@ async function main() {
     console.log(`Error al conectar con la base de datos --> ${DATABASE}`);
   }
 }
+
 main();
 
 app.listen(PORT, (req, res) => {

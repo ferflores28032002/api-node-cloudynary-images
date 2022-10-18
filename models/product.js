@@ -18,4 +18,11 @@ export const modelProducts = sequelize.define("products", {
   price: {
     type: DataTypes.DOUBLE,
   },
+  image_id: {
+   type: DataTypes.STRING
+  },
+  image_url: {
+    type: DataTypes.STRING
+  }
+
 });

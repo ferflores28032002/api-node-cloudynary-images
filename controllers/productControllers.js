@@ -3,6 +3,10 @@
 // Ejemplo: modelProducts --> productsControllers
 
 import { modelProducts } from "../models/product.js";
+import { deleteImage, uploadImage } from "../utils/cloudinary.js";
+
+// Modulo para eliminar las imagenes y usar funciones asyncronas
+import fs from "fs-extra";
 
 // Mostrar todos los productos
 
@@ -25,11 +29,21 @@ export const addProductsControllers = async (req, res) => {
   const { name, description, price } = req.body;
 
   try {
-    const addProducts = await modelProducts.create({
-      name,
-      description,
-      price,
-    });
+    if (req.files?.image) {
+      const results = await uploadImage(req.files.image.tempFilePath);
+
+      const { public_id, secure_url } = results;
+
+      const addProducts = await modelProducts.create({
+        name,
+        description,
+        price,
+        image_id: public_id,
+        image_url: secure_url,
+      });
+
+      await fs.unlink(req.files.image.tempFilePath);
+    }
 
     res.json({
       res: "¡Producto añadido correctamente!",
@@ -45,6 +59,14 @@ export const deleteProductsControllers = async (req, res) => {
   const { id } = req.params;
 
   try {
+    const buscar = await modelProducts.findOne({
+      where: {
+        id,
+      },
+    });
+
+    await deleteImage(buscar.image_id);
+
     const deleteProducts = await modelProducts.destroy({
       where: {
         id,
@@ -62,22 +84,36 @@ export const deleteProductsControllers = async (req, res) => {
 // Modificar un producto por id
 
 export const updateProductControllers = async (req, res) => {
+
+  // Parametros
   const { id } = req.params;
-  const { name, description, price } = req.body
+  const { name, description, price } = req.body;
 
   try {
-    const updateProducts = await modelProducts.findOne({
-      where: {
-        id,
-      },
-    });
 
-    updateProducts.set({
-      name, description, price
-    });
+    const updateProducts = await modelProducts.findOne({ where: { id } });
+
+    if (req.files?.image) {
+
+      const results = await uploadImage(req.files.image.tempFilePath);
+      const { public_id, secure_url } = results;
+      await deleteImage(updateProducts.image_id);
+
+      updateProducts.set({
+        name,
+        description,
+        price,
+        image_id: public_id,
+        image_url: secure_url,
+      });
+
+      await fs.unlink(req.files.image.tempFilePath);
+
+    }
     await updateProducts.save();
+
     res.json({
-      res: "¡Producto actualizado exitosamente!"
+      res: "¡Producto actualizado exitosamente!",
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
